@@ -87,7 +87,7 @@ Return ONLY valid JSON."""
         try:
             client = self._get_client()
             response = client.messages.create(
-                model="claude-opus-4-5-20250514",
+                model="claude-3-5-haiku-20241022",
                 max_tokens=500,
                 messages=[{"role": "user", "content": prompt}],
             )

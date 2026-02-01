@@ -57,7 +57,7 @@ class CostEffectiveAnalyzer:
         'rubbish', 'nonsense', 'trash', 'hate', 'worst', 'bad', 'terrible'
     ]
 
-    def __init__(self, model: str = "claude-haiku-3-5-20241022"):
+    def __init__(self, model: str = "claude-3-5-haiku-20241022"):
         """Use Haiku for cost efficiency - 12x cheaper than Sonnet."""
         self.model = model
         self._client = None

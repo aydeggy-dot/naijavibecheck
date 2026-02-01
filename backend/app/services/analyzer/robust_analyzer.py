@@ -59,7 +59,7 @@ class RobustSentimentAnalyzer:
         self,
         checkpoint_dir: Optional[Path] = None,
         config: Optional[Dict] = None,
-        model: str = "claude-sonnet-4-20250514"
+        model: str = "claude-3-5-sonnet-20241022"
     ):
         self.checkpoint_dir = checkpoint_dir or Path(settings.sessions_dir) / "analysis_checkpoints"
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)

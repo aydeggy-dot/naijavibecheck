@@ -19,7 +19,7 @@ class SentimentAnalyzer:
 
     def __init__(self):
         self.client = None
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-3-5-sonnet-20241022"
 
     def _get_client(self) -> anthropic.Anthropic:
         """Get or create Anthropic client."""
