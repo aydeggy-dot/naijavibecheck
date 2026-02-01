@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: naijavibecheck-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-naijavibecheck}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naijavibecheck}
+      POSTGRES_DB: ${POSTGRES_DB:-naijavibecheck}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-naijavibecheck}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - naijavibecheck-network
+
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    container_name: naijavibecheck-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - naijavibecheck-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: naijavibecheck-backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-naijavibecheck}:${POSTGRES_PASSWORD:-naijavibecheck}@db:5432/${POSTGRES_DB:-naijavibecheck}
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      INSTAGRAM_PAGE_USERNAME: ${INSTAGRAM_PAGE_USERNAME}
+      INSTAGRAM_PAGE_PASSWORD: ${INSTAGRAM_PAGE_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      DEBUG: ${DEBUG:-true}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    volumes:
+      - ./backend:/app
+      - ./templates:/app/templates
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - naijavibecheck-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker for background tasks
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: naijavibecheck-celery-worker
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-naijavibecheck}:${POSTGRES_PASSWORD:-naijavibecheck}@db:5432/${POSTGRES_DB:-naijavibecheck}
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      INSTAGRAM_PAGE_USERNAME: ${INSTAGRAM_PAGE_USERNAME}
+      INSTAGRAM_PAGE_PASSWORD: ${INSTAGRAM_PAGE_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+    volumes:
+      - ./backend:/app
+      - ./templates:/app/templates
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - naijavibecheck-network
+    command: celery -A app.workers.celery_app worker --loglevel=info
+
+  # Celery Beat for scheduled tasks
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: naijavibecheck-celery-beat
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-naijavibecheck}:${POSTGRES_PASSWORD:-naijavibecheck}@db:5432/${POSTGRES_DB:-naijavibecheck}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - naijavibecheck-network
+    command: celery -A app.workers.celery_app beat --loglevel=info
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: naijavibecheck-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - naijavibecheck-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  naijavibecheck-network:
+    driver: bridge

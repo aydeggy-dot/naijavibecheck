@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  /* NaijaVibeCheck Brand Colors */
+  --nvc-green: #008751;
+  --nvc-green-dark: #006b40;
+  --nvc-gold: #FFD700;
+  --nvc-coral: #FF6B6B;
+  --nvc-dark: #1A1A2E;
+  --nvc-gray: #4A4A5A;
+  --nvc-light: #F5F5F5;
+
+  --background: #f9fafb;
+  --foreground: #1A1A2E;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--nvc-green);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--nvc-green);
+  outline-offset: 2px;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

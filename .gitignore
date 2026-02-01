@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# Environment variables (SENSITIVE - never commit)
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sessions and credentials (SENSITIVE)
+backend/sessions/instagram_cookies.json
+backend/sessions/*.json
+!backend/sessions/.gitkeep
+
+# Node modules
+node_modules/
+.next/
+out/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Database
+*.db
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Claude Code
+.claude/
+
+# Personal config files with secrets
+configs.txt
+*.credentials
