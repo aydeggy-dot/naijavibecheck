@@ -107,14 +107,66 @@ class PostAnalysis(Base):
         DateTime,
         default=datetime.utcnow,
     )
+    # AI-generated content
+    headline: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        comment="Catchy Nigerian-style headline",
+    )
+    vibe_summary: Mapped[Optional[str]] = mapped_column(
+        Text,
+        comment="2-3 sentence summary in Nigerian style",
+    )
+    spicy_take: Mapped[Optional[str]] = mapped_column(
+        Text,
+        comment="Witty observation about the comments",
+    )
+    controversy_level: Mapped[Optional[str]] = mapped_column(
+        String(20),
+        comment="chill, mid, or wahala",
+    )
+    themes: Mapped[Optional[list[str]]] = mapped_column(
+        ARRAY(String(100)),
+        comment="Key themes in comments",
+    )
+    recommended_hashtags: Mapped[Optional[list[str]]] = mapped_column(
+        ARRAY(String(50)),
+        comment="Suggested hashtags",
+    )
+    # Store top comments as JSON for easy retrieval
+    top_positive_comments: Mapped[dict] = mapped_column(
+        JSONB,
+        default=list,
+        comment="Top positive comments with text",
+    )
+    top_negative_comments: Mapped[dict] = mapped_column(
+        JSONB,
+        default=list,
+        comment="Top negative comments with text",
+    )
+    notable_comments: Mapped[dict] = mapped_column(
+        JSONB,
+        default=list,
+        comment="Notable/viral-worthy comments",
+    )
+    # Legacy fields
     ai_summary: Mapped[Optional[str]] = mapped_column(
         Text,
-        comment="Claude's summary of the vibe",
+        comment="Claude's summary of the vibe (legacy)",
     )
     ai_insights: Mapped[dict] = mapped_column(
         JSONB,
         default=dict,
         comment="Additional AI insights",
+    )
+    # Metadata
+    analysis_cost: Mapped[Optional[float]] = mapped_column(
+        Float,
+        comment="Estimated cost in USD",
+    )
+    analysis_method: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        default="cost_effective",
+        comment="cost_effective or full_claude",
     )
 
     # Relationships

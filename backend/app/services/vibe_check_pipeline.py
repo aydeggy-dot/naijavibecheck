@@ -20,6 +20,7 @@ from typing import Dict, Any, Optional, Callable
 from app.services.scraper.robust_scraper import RobustInstagramScraper
 from app.services.analyzer.robust_analyzer import RobustSentimentAnalyzer
 from app.services.analyzer.cost_effective_analyzer import CostEffectiveAnalyzer
+from app.services.database_storage import DatabaseStorage, save_vibe_check_result
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ class VibeCheckPipeline:
         max_comments: int = 0,  # 0 = unlimited
         resume: bool = True,
         cost_effective: bool = True,  # Use hybrid approach (99% cheaper)
+        save_to_database: bool = True,  # Save to PostgreSQL (production)
         progress_callback: Optional[Callable[[str, int, int], None]] = None,
     ) -> Dict[str, Any]:
         """
@@ -298,13 +300,40 @@ class VibeCheckPipeline:
             'all_comments': analyzed_comments
         }
 
-        # Save final result
+        # Save final result to JSON file (backup)
         with open(result_path, 'w', encoding='utf-8') as f:
             json.dump(final_result, f, ensure_ascii=False, indent=2, default=str)
+
+        # Save to PostgreSQL database (production)
+        if save_to_database:
+            try:
+                logger.info("\n" + "=" * 60)
+                logger.info("STAGE 5: SAVING TO DATABASE")
+                logger.info("=" * 60)
+
+                db_result = await save_vibe_check_result(
+                    shortcode=shortcode,
+                    celebrity_name=celebrity_name,
+                    comments=comments,
+                    stats=stats,
+                    summary=summary,
+                    top_comments=final_result['top_comments']
+                )
+                final_result['database'] = {
+                    'saved': True,
+                    'post_id': db_result['post_id'],
+                    'analysis_id': db_result['analysis_id']
+                }
+                logger.info(f"Saved to database: post_id={db_result['post_id']}")
+            except Exception as e:
+                logger.error(f"Database save failed: {e}")
+                final_result['database'] = {'saved': False, 'error': str(e)}
 
         logger.info(f"\n" + "=" * 60)
         logger.info(f"VIBE CHECK COMPLETE!")
         logger.info(f"Results saved to: {result_path}")
+        if save_to_database and final_result.get('database', {}).get('saved'):
+            logger.info(f"Results saved to: PostgreSQL database")
         logger.info(f"=" * 60)
 
         return final_result
