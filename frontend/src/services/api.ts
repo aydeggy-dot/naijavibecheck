@@ -173,6 +173,11 @@ class APIService {
     return response.data;
   }
 
+  async getAnalysisById(analysisId: string): Promise<PostAnalysis> {
+    const response = await this.client.get(`/analysis/${analysisId}`);
+    return response.data;
+  }
+
   // Content Generation
   async generateContent(postAnalysisId: string, params?: {
     content_type?: string;

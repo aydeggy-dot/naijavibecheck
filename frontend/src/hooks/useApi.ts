@@ -179,6 +179,14 @@ export function usePostAnalysis(postId: string) {
   });
 }
 
+export function useAnalysis(analysisId: string) {
+  return useQuery({
+    queryKey: ['analysis', analysisId],
+    queryFn: () => api.getAnalysisById(analysisId),
+    enabled: !!analysisId,
+  });
+}
+
 export function useTriggerAnalysis() {
   const queryClient = useQueryClient();
   return useMutation({

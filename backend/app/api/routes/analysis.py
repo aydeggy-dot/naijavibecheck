@@ -19,44 +19,97 @@ from app.services.analyzer import (
 router = APIRouter()
 
 
+def format_analysis_response(a, include_comments=False):
+    """Format a PostAnalysis object for API response."""
+    from app.models import Post, Celebrity
+
+    # Get celebrity name from post relationship
+    celebrity_name = None
+    post_url = None
+    if a.post:
+        post_url = a.post.post_url or f"https://www.instagram.com/p/{a.post.shortcode}/"
+        if hasattr(a.post, 'celebrity') and a.post.celebrity:
+            celebrity_name = a.post.celebrity.full_name or a.post.celebrity.instagram_username
+
+    return {
+        "id": str(a.id),
+        "post_id": str(a.post_id),
+        "celebrity_name": celebrity_name,
+        "post_url": post_url,
+        "overall_sentiment": "positive" if (a.positive_percentage or 0) > (a.negative_percentage or 0) else (
+            "negative" if (a.negative_percentage or 0) > (a.positive_percentage or 0) else "neutral"
+        ),
+        "sentiment_breakdown": {
+            "positive": a.positive_percentage or 0,
+            "negative": a.negative_percentage or 0,
+            "neutral": a.neutral_percentage or 0,
+        },
+        "total_comments": a.total_comments_analyzed or 0,
+        # New fields from cost-effective analyzer
+        "headline": a.headline,
+        "vibe_summary": a.vibe_summary,
+        "spicy_take": a.spicy_take,
+        "controversy_level": a.controversy_level,
+        "themes": a.themes or [],
+        "recommended_hashtags": a.recommended_hashtags or [],
+        # Comments (optional)
+        "top_positive_comments": a.top_positive_comments if include_comments else [],
+        "top_negative_comments": a.top_negative_comments if include_comments else [],
+        "notable_comments": a.notable_comments if include_comments else [],
+        # Legacy fields
+        "controversy_score": a.controversy_score or 0,
+        "viral_potential": (a.post.viral_score or 0) / 100 if a.post else 0,
+        "key_themes": a.ai_insights.get("key_themes", []) if a.ai_insights else [],
+        "key_insights": a.ai_insights.get("key_insights", []) if a.ai_insights else [],
+        "summary": a.ai_summary or a.vibe_summary,
+        "analyzed_at": a.analyzed_at.isoformat() if a.analyzed_at else None,
+        "analysis_method": a.analysis_method,
+        "analysis_cost": a.analysis_cost,
+    }
+
+
 @router.get("/recent")
 async def get_recent_analyses(
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
 ):
     """Get recent post analyses."""
+    from app.models import Celebrity
+
     result = await db.execute(
         select(PostAnalysis)
-        .options(selectinload(PostAnalysis.post))
+        .options(
+            selectinload(PostAnalysis.post).selectinload(Post.celebrity)
+        )
         .order_by(PostAnalysis.analyzed_at.desc())
         .limit(limit)
     )
     analyses = result.scalars().all()
 
-    return [
-        {
-            "id": str(a.id),
-            "post_id": str(a.post_id),
-            "overall_sentiment": "positive" if a.positive_percentage > a.negative_percentage else (
-                "negative" if a.negative_percentage > a.positive_percentage else "neutral"
-            ),
-            "sentiment_breakdown": {
-                "positive": a.positive_percentage,
-                "negative": a.negative_percentage,
-                "neutral": a.neutral_percentage,
-            },
-            "top_positive_comments": [],  # Simplified
-            "top_negative_comments": [],
-            "controversy_score": a.controversy_score or 0,
-            "viral_potential": (a.post.viral_score or 0) / 100 if a.post else 0,
-            "key_themes": a.ai_insights.get("key_themes", []) if a.ai_insights else [],
-            "trending_topics": [],
-            "nigerian_context": a.ai_insights if a.ai_insights else {},
-            "summary": a.ai_summary,
-            "analyzed_at": a.analyzed_at.isoformat() if a.analyzed_at else None,
-        }
-        for a in analyses
-    ]
+    return [format_analysis_response(a) for a in analyses]
+
+
+@router.get("/{analysis_id}")
+async def get_analysis_by_id(
+    analysis_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a specific analysis by ID with full details."""
+    from app.models import Celebrity
+
+    result = await db.execute(
+        select(PostAnalysis)
+        .options(
+            selectinload(PostAnalysis.post).selectinload(Post.celebrity)
+        )
+        .where(PostAnalysis.id == analysis_id)
+    )
+    analysis = result.scalar_one_or_none()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    return format_analysis_response(analysis, include_comments=True)
 
 
 @router.post("/posts/{post_id}/analyze")
