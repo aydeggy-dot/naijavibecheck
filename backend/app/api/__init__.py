@@ -12,6 +12,7 @@ from app.api.routes import (
     analysis,
     generate,
     publish,
+    discovery,
 )
 
 api_router = APIRouter()
@@ -25,3 +26,4 @@ api_router.include_router(generate.router, prefix="/generate", tags=["generate"]
 api_router.include_router(publish.router, prefix="/publish", tags=["publish"])
 api_router.include_router(content.router, prefix="/content", tags=["content"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
+api_router.include_router(discovery.router, prefix="/discovery", tags=["discovery"])

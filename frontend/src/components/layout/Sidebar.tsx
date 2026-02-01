@@ -16,12 +16,14 @@ import {
   Settings,
   Activity,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Celebrities', href: '/celebrities', icon: Users },
+  { name: 'Discover', href: '/discover', icon: Sparkles },
   { name: 'Posts', href: '/posts', icon: FileText },
   { name: 'Viral Tracker', href: '/viral', icon: TrendingUp },
   { name: 'Analysis', href: '/analysis', icon: BarChart3 },
